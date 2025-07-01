@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # dependencies
@@ -21,3 +22,17 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+=======
+HELP.md
+.gradle
+build/
+
+# application.properties 파일 무시 비밀보안문제
+src/main/resources/application.properties
+
+### IntelliJ IDEA ###
+.idea
+
+### VS Code ###
+.vscode/
+>>>>>>> 3eea50a4855e2fea2182dcb0a6a5f38d131ed89e
