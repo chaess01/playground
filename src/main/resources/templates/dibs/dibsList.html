@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/layout1}"
+      class="dibsList">
+
+<head>
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+    <link th:href="@{/css/dibsList.css}" rel="stylesheet">
+
+</head>
+
+<div layout:fragment="content" class="content-mg">
+
+    <h2 class="mb-4">
+        찜한 목록
+    </h2>
+    <table class="table">
+        <thead>
+            <tr class="text-center">
+                <td class="subtitle">상품</td>
+            </tr>
+        </thead>
+        <tbody class="dibsLists">
+            <th:block th:unless="${dibsItems.size() == 0}">
+                <tr th:each="dibsItem : ${dibsItems}">
+                    <td class="d-flex dibsItem">
+                        <div class="repImgDiv align-self-center">
+                            <a th:href="'/item/' +${dibsItem.itemId}">
+                                <!-- 품절 상태에 따라 이미지에 필터 추가 및 품절 배지 표시 -->
+                                <img th:src="${dibsItem.imgUrl}" class="rounded repImg" th:alt="${dibsItem.itemNm}"
+                                     th:classappend="${dibsItem.stockNumber<=0 ? 'sold-out-filter' : ''}">
+                                <!-- 품절 상태일 경우 배지 표시 -->
+                                <span th:if="${dibsItem.stockNumber<=0}" class="sold-out-badge">Sold Out</span>
+
+                            </a>
+                        </div>
+                        <div class="align-self-center">
+                            <a th:href="'/item/' +${dibsItem.itemId}">
+                                <span th:text="${dibsItem.itemNm}" class="itnm fs24 font-weight-bold"></span>
+                                
+                            </a>
+                            <div class="fs18 font-weight-light">
+                                <span class="input-group mt-2">
+                                    <span th:id="'price_' + ${dibsItem.dibsItemId}"
+                                          th:data-price="${dibsItem.price}"
+                                          th:text="${#numbers.formatInteger(dibsItem.price, 1,'COMMA')} + '원'" class="align-self-center mr-2">
+
+                                    </span>
+                                    <button type="button" class="close" aria-label="Close">                             </button>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="button-container ml-auto align-self-center">
+                            <!-- 품절되지 않은 경우 장바구니에 추가할 수 있도록 처리 -->
+                            <button th:if="${dibsItem.stockNumber<=0}" class="fs16 text-muted custom-btn">품절</button>
+                            <button th:if="${dibsItem.stockNumber>0}" class="addCart custom-btn" th:data-id="${dibsItem.dibsItemId}" onclick="addCartFromDibs(this)">🛒</button>
+                            <button aria-hidden="true" th:data-id="${dibsItem.dibsItemId}" onclick="deleteDibsItem(this)" class="deleteBtn custom-btn">❤</button>
+                            
+                        </div>
+                    </td>
+                </tr>
+            </th:block>
+            <th:block th:if="${dibsItems.size() == 0}">
+                <tr><td class="d-flex"><h4>결과 없음</h4></td></tr>
+            </th:block>
+        </tbody>
+    </table>
+</div>
+
+
+<!-- 사용자 스크립트 추가 -->
+<th:block layout:fragment="script">
+
+    <script th:inline="javascript">
+        function addCartFromDibs(obj){
+            var token = $("meta[name='_csrf']").attr("content");
+            var header = $("meta[name='_csrf_header']").attr("content");
+            var dibsItemId=$(obj).data('id');
+
+            var paramData = {
+                dibsItemId: dibsItemId
+            };
+            var param = JSON.stringify(paramData);
+
+            $.ajax({
+                url: "/dibsToCart",
+                type: "POST",
+                data: {dibsItemId: dibsItemId},
+                beforeSend: function (xhr) {
+                    xhr.setRequestHeader(header, token);
+                },
+                cache: false,
+                success: function (result, status) {
+                    if(result==0){
+                        alert("재고가 없습니다.");
+                        return;
+                    }
+                    alert("상품을 장바구니에 담았습니다.");
+                    if(confirm("장바구니로 이동하시겠습니까?")){
+                        location.href="/cart";
+                    } else{
+                        location.reload();
+                    }
+                },
+                error: function (jqXHR, status, error) {
+                    alert('잠시 후 다시 시도해주세요');
+                }
+            });
+
+        }
+
+        function deleteDibsItem(obj){
+            var token = $("meta[name='_csrf']").attr("content");
+            var header = $("meta[name='_csrf_header']").attr("content");
+
+            var paramData = {
+                dibsItemId: $(obj).data('id')
+            };
+
+            var param = JSON.stringify(paramData);
+
+            $.ajax({
+                url      : "/dibsDelete",
+                type     : "DELETE",
+                contentType: "application/json",
+                data: param,
+                beforeSend : function(xhr){
+                    xhr.setRequestHeader(header, token);
+                },
+                dataType : "json",
+                cache   : false,
+                success  : function(result){
+                    location.reload();
+                },
+                error : function(jqXHR, status, error){
+                    alert('잠시 후 다시 시도해주세요');
+                }
+            });
+        }
+
+
+    </script>
+
+</th:block>
+
+</html>
